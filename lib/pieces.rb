@@ -46,12 +46,15 @@ end
 
 # Base class for all chess pieces.
 class ChessPiece
-  attr_reader :starting_position, :owner
+  attr_accessor :current_position
+  attr_reader :owner, :starting_position, :allowed_moves
 
-  def initialize(glyph, starting_position, owner)
+  def initialize(glyph, starting_position, owner, allowed_moves)
     @glyph = glyph
     @starting_position = starting_position
+    @current_position = starting_position
     @owner = owner
+    @allowed_moves = allowed_moves
   end
 
   def to_s
@@ -61,42 +64,46 @@ end
 
 # A pawn in a game of chess.
 class Pawn < ChessPiece
+  attr_writer :allowed_moves
   def initialize(glyph, starting_position, owner)
-    super
+    super(glyph, starting_position, owner, \
+      %i[two_spaces_forward one_space_forward diagonal_to_take])
   end
 end
 
 # A rook in a game of chess.
 class Rook < ChessPiece
+  attr_writer :allowed_moves
   def initialize(glyph, starting_position, owner)
-    super
+   super(glyph, starting_position, owner, %i[horizontal vertical castling])
   end
 end
 
 # A knight in a game of chess.
 class Knight < ChessPiece
   def initialize(glyph, starting_position, owner)
-    super
+    super(glyph, starting_position, owner, %i[knight])
   end
 end
 
 # A bishop in a game of chess.
 class Bishop < ChessPiece
   def initialize(glyph, starting_position, owner)
-    super
+    super(glyph, starting_position, owner, %i[diagonal])
   end
 end
 
 # A queen in a game of chess.
 class Queen < ChessPiece
   def initialize(glyph, starting_position, owner)
-    super
+    super(glyph, starting_position, owner, %i[horizontal vertical diagonal])
   end
 end
 
 # A king in a game of chess.
 class King < ChessPiece
+  attr_writer :allowed_moves
   def initialize(glyph, starting_position, owner)
-    super
+    super(glyph, starting_position, owner, %i[one_any_direction castling])
   end
 end
