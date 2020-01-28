@@ -32,11 +32,16 @@ class ChessManager
     puts @board
     eligible_move = false
     until eligible_move
-      piece, curr_position = piece_and_position
+      piece = select_piece
       desired_position = new_position
-      eligible_move = eligible_move?(piece, curr_position, desired_position)
+      eligible_move = eligible_move?(piece, desired_position)
     end
-    @board.set(curr_position, nil)
+    @board.set(piece.current_position, nil)
+    piece.current_position = desired_position
+    piece_to_remove = @board.at(desired_position)
+    unless piece_to_remove.nil?
+      piece_to_remove.current_position = nil
+    end
     @board.set(desired_position, piece)
   end
 
@@ -56,20 +61,77 @@ class ChessManager
     false
   end
 
-  def eligible_move?(_piece, _curr_position, _desired_position)
-    # TODO: implement move eligibility logic.
-    true
+  def remove_special_move_from_piece(piece, move_type)
+    unless %i[one_any_direction castling one_space_forward two_spaces_forward].include?(move_type)
+      return
+    end
+
+    piece.allowed_moves = piece.allowed_moves.filter do |move|
+      !%i[castling two_spaces_forward].include?(move)
+    end
   end
 
-  def piece_and_position
+  def eligible_move?(piece, desired_position)
+    #TODO: include checkmate restrictions and en passing piece removal.
+    piece.allowed_moves.each do |move_type|
+      if can_move_to_position_via?(piece, desired_position, move_type)
+        remove_special_move_from_piece(piece, move_type)
+        return true
+      end
+    end
+    puts "That move isn't valid."
+    false
+  end
+
+  def forward_move?(piece, to)
+    if piece.starting_position[1].to_i > 6
+      return to[1].to_i < piece.current_position[1].to_i
+    end
+    to[1].to_i > piece.current_position[1].to_i
+  end
+
+  def can_move_to_position_via?(piece, to, move_type)
+    return false if player_has_piece?(to)
+
+    from = piece.current_position
+    case move_type
+    when :two_spaces_forward
+      @board.in_same_column?(from, to) && \
+        @board.n_rows_away?(from, to, 2) && \
+        @board.is_vertical_path_clear?(from, to) && \
+        forward_move?(piece, to)
+    when :one_space_forward
+      @board.in_same_column?(from, to) && \
+        @board.n_rows_away?(from, to, 1) && \
+        @board.is_vertical_path_clear?(from, to) && \
+        forward_move?(piece, to)
+    when :diagonal_to_take
+      false
+    when :horizontal
+      @board.in_same_row?(from, to) && \
+        @board.is_horizontal_path_clear?(from, to)
+    when :vertical
+      @board.in_same_column?(from, to) && \
+        @board.is_vertical_path_clear?(from, to)
+    when :diagonal
+      false
+    when :knight
+      false
+    when :one_any_direction
+      false
+    when :castling
+      false
+    end
+  end
+
+  def select_piece
     puts "Which piece are you moving #{@current_player}?"
     position = gets.chomp
     until valid_position?(position) && player_has_piece?(position)
       puts "You don't have a piece there. Pick another position."
       position = gets.chomp
     end
-    piece = @board.at(position)
-    [piece, position]
+    @board.at(position)
   end
 
   def player_has_piece?(position)
