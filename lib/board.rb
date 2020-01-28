@@ -2,6 +2,7 @@
 
 require 'colorize'
 
+# Representation of a ChessBoard for a game of chess.
 class ChessBoard
   def initialize(white_pieces, black_pieces)
     @board = initialize_board(white_pieces, black_pieces)
