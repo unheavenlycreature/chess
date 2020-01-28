@@ -3,7 +3,7 @@
 # Module with convenience method to obtain
 # two sets of pieces ready for a new game.
 module InitialPieces
-  def pieces_for_new_game(white_name = 'white', black_name = 'black')
+  def self.pieces_for_new_game(white_name = 'white', black_name = 'black')
     white_pieces = [
       Pawn.new('♙', 'a2', white_name),
       Pawn.new('♙', 'b2', white_name),
