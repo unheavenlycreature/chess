@@ -23,14 +23,14 @@ module InitialPieces
       King.new('♔', 'e1', white_name)
     ]
     black_pieces = [
-      Pawn.new('♟', '7', black_name),
-      Pawn.new('♟', '7', black_name),
-      Pawn.new('♟', '7', black_name),
-      Pawn.new('♟', '7', black_name),
-      Pawn.new('♟', '7', black_name),
-      Pawn.new('♟', '7', black_name),
-      Pawn.new('♟', '7', black_name),
-      Pawn.new('♟', '7', black_name),
+      Pawn.new('♟', 'a7', black_name),
+      Pawn.new('♟', 'b7', black_name),
+      Pawn.new('♟', 'c7', black_name),
+      Pawn.new('♟', 'd7', black_name),
+      Pawn.new('♟', 'e7', black_name),
+      Pawn.new('♟', 'f7', black_name),
+      Pawn.new('♟', 'g7', black_name),
+      Pawn.new('♟', 'h7', black_name),
       Rook.new('♜', 'a8', black_name),
       Rook.new('♜', 'h8', black_name),
       Knight.new('♞', 'b8', black_name),
