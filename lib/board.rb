@@ -26,10 +26,20 @@ class ChessBoard
     s
   end
 
-  def self.location_to_coordinates(location)
-    column = location.codepoints[0] - 97
-    row = location[1].to_i - 1
+  def self.position_to_coordinates(position)
+    column = position.codepoints[0] - 97
+    row = position[1].to_i - 1
     [column, row]
+  end
+
+  def at(position)
+    col, row = ChessBoard.position_to_coordinates(position)
+    @board[row][col]
+  end
+
+  def set(position, piece)
+    col, row = ChessBoard.position_to_coordinates(position)
+    @board[row][col] = piece
   end
 
   private
@@ -38,7 +48,7 @@ class ChessBoard
     board = []
     8.times { board << [nil] * 8 }
     (white_pieces + black_pieces).each do |piece|
-      col, row = ChessBoard.location_to_coordinates(piece.starting_location)
+      col, row = ChessBoard.position_to_coordinates(piece.starting_position)
       board[row][col] = piece
     end
     board
