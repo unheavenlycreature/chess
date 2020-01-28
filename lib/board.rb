@@ -42,13 +42,57 @@ class ChessBoard
     @board[row][col] = piece
   end
 
+  def in_same_column?(from, to)
+    ChessBoard.position_to_coordinates(from)[0] == \
+      ChessBoard.position_to_coordinates(to)[0]
+  end
+
+  def in_same_row?(from, to)
+    ChessBoard.position_to_coordinates(from)[1] == \
+      ChessBoard.position_to_coordinates(to)[1]
+  end
+
+  def is_vertical_path_clear?(from, to)
+    from_column, from_row = ChessBoard.position_to_coordinates(from)
+    _to_column, to_row = ChessBoard.position_to_coordinates(to)
+    row = @board.transpose[from_column]
+
+    if to_row < from_row
+      from_row = 7 - from_row
+      to_row = 7 - to_row
+      row = @board.transpose.reverse[from_column]
+    end
+
+    row[from_row + 1..to_row].all?(&:nil?)
+  end
+
+  def is_horizontal_path_clear?(from, to)
+    from_column, from_row = ChessBoard.position_to_coordinates(from)
+    to_column, _to_row = ChessBoard.position_to_coordinates(to)
+    row = @board[from_row]
+
+    if to_column < from_column
+      from_column = 7 - from_column
+      to_column = 7 - to_column
+      row = @board.reverse[from_row]
+    end
+
+    row[from_column + 1..to_column].all?(&:nil?)
+  end
+
+  def n_rows_away?(from, to, n)
+    _from_column, from_row = ChessBoard.position_to_coordinates(from)
+    _to_column, to_row = ChessBoard.position_to_coordinates(to)
+    (to_row - from_row).abs == n
+  end
+
   private
 
   def initialize_board(white_pieces, black_pieces)
     board = []
     8.times { board << [nil] * 8 }
     (white_pieces + black_pieces).each do |piece|
-      col, row = ChessBoard.position_to_coordinates(piece.starting_position)
+      col, row = ChessBoard.position_to_coordinates(piece.current_position)
       board[row][col] = piece
     end
     board
