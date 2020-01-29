@@ -116,7 +116,6 @@ class ChessBoard
     (to_row - from_row).abs == n
   end
 
-
   private
 
   def initialize_board(white_pieces, black_pieces)
