@@ -7,12 +7,10 @@ require_relative 'pieces'
 class ChessManager
   def initialize
     if new_game?
-      @white_name, @black_name = new_player_names
-      @white_pieces, @black_pieces = \
-        InitialPieces.pieces_for_new_game(@white_name, @black_name)
-      @board = ChessBoard.new(@white_pieces, @black_pieces)
-      @current_player = @white_name
-      @current_pieces = @white_pieces
+      @current_name, @opponent_name = new_player_names
+      @current_pieces, @opponent_pieces = \
+        InitialPieces.pieces_for_new_game(@current_name, @opponent_name)
+      @board = ChessBoard.new(@current_pieces, @opponent_pieces)
       play
     else
       # TODO: Implement game loading.
@@ -30,30 +28,21 @@ class ChessManager
 
   def next_turn
     puts @board
-    eligible_move = false
-    until eligible_move
+    made_move = false
+    until made_move
       piece = select_piece
       desired_position = new_position
-      eligible_move = eligible_move?(piece, desired_position)
+      made_move = made_move?(piece, desired_position)
     end
-
-    @board.at(desired_position).current_position = nil \
-      if opposing_player_has_piece?(desired_position)
-
-    @board.set(piece.current_position, nil)
-    piece.current_position = desired_position
-    @board.set(desired_position, piece)
   end
 
   def switch_players
-    if @current_player == @white_name
-      @current_player = @black_name
-      @current_pieces = @black_pieces
-      return
-    end
-
-    @current_player = @white_name
-    @current_pieces = @white_pieces
+    temp_name = @current_name
+    temp_pieces = @current_pieces
+    @current_name = @opponent_name
+    @current_pieces = @opponent_pieces
+    @opponent_name = temp_name
+    @opponent_pieces = temp_pieces
   end
 
   def game_over?
@@ -67,13 +56,77 @@ class ChessManager
     end
   end
 
-  def eligible_move?(piece, desired_position)
+  def remove_en_passant_from_pawns
+    @current_pieces.each do |piece|
+      next unless piece.is_a? Pawn
+
+      piece.allowed_moves.keep_if { |move| move != :en_passant }
+    end
+  end
+
+  def setup_en_passant(piece, desired_position)
+    @targetable_by_en_passant = piece
+
+    if piece.current_position[1].to_i > desired_position[1].to_i
+      @en_passant_position = piece.current_position[0] + \
+        (piece.current_position[1].to_i - 1).to_s
+    else 
+      @en_passant_position = piece.current_position[0] + \
+        (piece.current_position[1].to_i + 1).to_s
+    end
+    apply_en_passant_to_opponent_pawns(desired_position)
+  end
+
+  def apply_en_passant_to_opponent_pawns(new_pawn_position)
+    @opponent_pieces.each do |piece|
+      next unless piece.is_a? Pawn
+
+      piece.allowed_moves << :en_passant if @board.in_same_row?(piece.current_position, new_pawn_position) && \
+                                            @board.n_columns_away?(piece.current_position, new_pawn_position, 1)
+    end
+  end
+
+  def remove_targeted_piece
+    @board.set(@targetable_by_en_passant.current_position, nil)
+    @targetable_by_en_passant.current_position = nil
+  end
+
+  def reset_en_passant
+    @targetable_by_en_passant = nil
+    @en_passant_position = nil
+  end
+
+  def make_move(piece, desired_position, move_type)
+    remove_special_move_from_piece(piece)
+
+    # Inform opponent's piece it was removed.
+    @board.at(desired_position).current_position = nil \
+      if player_has_piece?(desired_position, @opponent_name)
+
+    # Prepare opponent pawns for en passant.
+    if move_type == :two_spaces_forward
+      setup_en_passant(piece, desired_position)
+    end
+
+    # Remove opponent's pawn if it was captured by en_passant.
+    remove_targeted_piece if move_type == :en_passant
+
+    # Move the piece to the new position
+    @board.set(piece.current_position, nil)
+    piece.current_position = desired_position
+    @board.set(desired_position, piece)
+
+    reset_en_passant unless move_type == :two_spaces_forward
+    remove_en_passant_from_pawns unless move_type == :two_spaces_forward
+  end
+
+  def made_move?(piece, desired_position)
     # TODO: include checkmate restrictions and en passing piece removal.
     piece.allowed_moves.each do |move_type|
-      if can_move_to_position_via?(piece, desired_position, move_type)
-        remove_special_move_from_piece(piece)
-        return true
-      end
+      next unless can_move_to_position_via?(piece, desired_position, move_type)
+
+      make_move(piece, desired_position, move_type)
+      return true
     end
     puts "That move isn't valid."
     false
@@ -87,10 +140,11 @@ class ChessManager
   end
 
   def can_move_to_position_via?(piece, to, move_type)
-    return false if player_has_piece?(to)
+    return false if player_has_piece?(to, @current_name)
 
     from = piece.current_position
     case move_type
+    when :en_passant then to == @en_passant_position
     when :two_spaces_forward
       @board.in_same_column?(from, to) && \
         @board.n_rows_away?(from, to, 2) && \
@@ -105,7 +159,7 @@ class ChessManager
       @board.diagonally_accessible?(from, to) && \
         @board.one_space_away?(from, to) && \
         forward_move?(piece, to) && \
-        opposing_player_has_piece?(to)
+        player_has_piece?(to, @opponent_name)
     when :horizontal
       @board.in_same_row?(from, to) && \
         @board.horizontal_path_clear?(from, to)
@@ -113,36 +167,28 @@ class ChessManager
       @board.in_same_column?(from, to) && \
         @board.vertical_path_clear?(from, to)
     when :diagonal
-      @board.diagonally_accessible?(from, to) &&
+      @board.diagonally_accessible?(from, to) && \
         @board.diagonal_path_clear?(from, to)
-    when :knight
-      @board.knight_accessible?(from, to)
-    when :one_any_direction
-      # TODO handle moving into check.
-      @board.one_space_away?(from, to)
-    when :castling
-      false
+    when :knight then @board.knight_accessible?(from, to)
+    # TODO: handle moving into check.
+    when :one_any_direction then @board.one_space_away?(from, to)
+    when :castling then false
     end
   end
 
   def select_piece
-    puts "Which piece are you moving #{@current_player}?"
+    puts "Which piece are you moving #{@current_name}?"
     position = gets.chomp
-    until valid_position?(position) && player_has_piece?(position)
+    until valid_position?(position) && player_has_piece?(position, @current_name)
       puts "You don't have a piece there. Pick another position."
       position = gets.chomp
     end
     @board.at(position)
   end
 
-  def player_has_piece?(position)
+  def player_has_piece?(position, player)
     piece = @board.at(position)
-    !piece.nil? && piece.owner == @current_player
-  end
-
-  def opposing_player_has_piece?(position)
-    piece = @board.at(position)
-    !piece.nil? && piece.owner != @current_player
+    !piece.nil? && piece.owner == player
   end
 
   def new_position
