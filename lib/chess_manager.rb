@@ -61,11 +61,7 @@ class ChessManager
     false
   end
 
-  def remove_special_move_from_piece(piece, move_type)
-    unless %i[one_any_direction castling one_space_forward two_spaces_forward].include?(move_type)
-      return
-    end
-
+  def remove_special_move_from_piece(piece)
     piece.allowed_moves = piece.allowed_moves.filter do |move|
       !%i[castling two_spaces_forward].include?(move)
     end
@@ -75,7 +71,7 @@ class ChessManager
     # TODO: include checkmate restrictions and en passing piece removal.
     piece.allowed_moves.each do |move_type|
       if can_move_to_position_via?(piece, desired_position, move_type)
-        remove_special_move_from_piece(piece, move_type)
+        remove_special_move_from_piece(piece)
         return true
       end
     end
