@@ -36,12 +36,12 @@ class ChessManager
       desired_position = new_position
       eligible_move = eligible_move?(piece, desired_position)
     end
+
+    @board.at(desired_position).current_position = nil \
+      if opposing_player_has_piece?(desired_position)
+
     @board.set(piece.current_position, nil)
     piece.current_position = desired_position
-    piece_to_remove = @board.at(desired_position)
-    unless piece_to_remove.nil?
-      piece_to_remove.current_position = nil
-    end
     @board.set(desired_position, piece)
   end
 
@@ -72,7 +72,7 @@ class ChessManager
   end
 
   def eligible_move?(piece, desired_position)
-    #TODO: include checkmate restrictions and en passing piece removal.
+    # TODO: include checkmate restrictions and en passing piece removal.
     piece.allowed_moves.each do |move_type|
       if can_move_to_position_via?(piece, desired_position, move_type)
         remove_special_move_from_piece(piece, move_type)
@@ -98,27 +98,32 @@ class ChessManager
     when :two_spaces_forward
       @board.in_same_column?(from, to) && \
         @board.n_rows_away?(from, to, 2) && \
-        @board.is_vertical_path_clear?(from, to) && \
+        @board.vertical_path_clear?(from, to) && \
         forward_move?(piece, to)
     when :one_space_forward
       @board.in_same_column?(from, to) && \
         @board.n_rows_away?(from, to, 1) && \
-        @board.is_vertical_path_clear?(from, to) && \
+        @board.vertical_path_clear?(from, to) && \
         forward_move?(piece, to)
     when :diagonal_to_take
-      false
+      @board.diagonally_accessible?(from, to) && \
+        @board.one_space_away?(from, to) && \
+        forward_move?(piece, to) && \
+        opposing_player_has_piece?(to)
     when :horizontal
       @board.in_same_row?(from, to) && \
-        @board.is_horizontal_path_clear?(from, to)
+        @board.horizontal_path_clear?(from, to)
     when :vertical
       @board.in_same_column?(from, to) && \
-        @board.is_vertical_path_clear?(from, to)
+        @board.vertical_path_clear?(from, to)
     when :diagonal
-      false
+      @board.diagonally_accessible?(from, to) &&
+        @board.diagonal_path_clear?(from, to)
     when :knight
       false
     when :one_any_direction
-      false
+      # TODO handle moving into check.
+      @board.one_space_away?(from, to)
     when :castling
       false
     end
@@ -137,6 +142,11 @@ class ChessManager
   def player_has_piece?(position)
     piece = @board.at(position)
     !piece.nil? && piece.owner == @current_player
+  end
+
+  def opposing_player_has_piece?(position)
+    piece = @board.at(position)
+    !piece.nil? && piece.owner != @current_player
   end
 
   def new_position
@@ -170,3 +180,5 @@ class ChessManager
     [white_name, black_name]
   end
 end
+
+ChessManager.new
