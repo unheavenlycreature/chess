@@ -58,6 +58,13 @@ class ChessBoard
     (from_col - to_col).abs == (from_row - to_row).abs
   end
 
+  def knight_accessible?(from, to)
+    from_row, from_col = ChessBoard.position_to_coordinates(from)
+    to_row, to_col = ChessBoard.position_to_coordinates(to)
+    ((from_col - to_col).abs == 2 && (from_row - to_row).abs == 1) || \
+      ((from_col - to_col).abs == 1 && (from_row - to_row).abs == 2)
+  end
+
   def vertical_path_clear?(from, to)
     from_row, col = ChessBoard.position_to_coordinates(from)
     to_row, = ChessBoard.position_to_coordinates(to)

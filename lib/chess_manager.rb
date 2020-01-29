@@ -120,7 +120,7 @@ class ChessManager
       @board.diagonally_accessible?(from, to) &&
         @board.diagonal_path_clear?(from, to)
     when :knight
-      false
+      @board.knight_accessible?(from, to)
     when :one_any_direction
       # TODO handle moving into check.
       @board.one_space_away?(from, to)
@@ -180,5 +180,3 @@ class ChessManager
     [white_name, black_name]
   end
 end
-
-ChessManager.new
