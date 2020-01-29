@@ -114,7 +114,10 @@ class ChessBoard
   end
 
   def one_space_away?(from, to)
-    n_rows_away?(from, to, 1) && n_columns_away?(from, to, 1)
+    from_row, from_col = ChessBoard.position_to_coordinates(from)
+    to_row, to_col = ChessBoard.position_to_coordinates(to)
+
+    (to_col - from_col).abs <= 1 && (to_row - from_row).abs <= 1
   end
 
   def n_rows_away?(from, to, n)
