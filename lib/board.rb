@@ -29,7 +29,7 @@ class ChessBoard
   def self.position_to_coordinates(position)
     column = position.codepoints[0] - 97
     row = position[1].to_i - 1
-    [column, row]
+    [row, column]
   end
 
   def at(position)
@@ -43,47 +43,83 @@ class ChessBoard
   end
 
   def in_same_column?(from, to)
-    ChessBoard.position_to_coordinates(from)[0] == \
-      ChessBoard.position_to_coordinates(to)[0]
-  end
-
-  def in_same_row?(from, to)
     ChessBoard.position_to_coordinates(from)[1] == \
       ChessBoard.position_to_coordinates(to)[1]
   end
 
-  def is_vertical_path_clear?(from, to)
-    from_column, from_row = ChessBoard.position_to_coordinates(from)
-    _to_column, to_row = ChessBoard.position_to_coordinates(to)
-    row = @board.transpose[from_column]
-
-    if to_row < from_row
-      from_row = 7 - from_row
-      to_row = 7 - to_row
-      row = @board.transpose.reverse[from_column]
-    end
-
-    row[from_row + 1..to_row].all?(&:nil?)
+  def in_same_row?(from, to)
+    ChessBoard.position_to_coordinates(from)[0] == \
+      ChessBoard.position_to_coordinates(to)[0]
   end
 
-  def is_horizontal_path_clear?(from, to)
-    from_column, from_row = ChessBoard.position_to_coordinates(from)
-    to_column, _to_row = ChessBoard.position_to_coordinates(to)
-    row = @board[from_row]
+  def diagonally_accessible?(from, to)
+    from_row, from_col = ChessBoard.position_to_coordinates(from)
+    to_row, to_col = ChessBoard.position_to_coordinates(to)
+    (from_col - to_col).abs == (from_row - to_row).abs
+  end
 
-    if to_column < from_column
-      from_column = 7 - from_column
-      to_column = 7 - to_column
-      row = @board.reverse[from_row]
+  def vertical_path_clear?(from, to)
+    from_row, col = ChessBoard.position_to_coordinates(from)
+    to_row, = ChessBoard.position_to_coordinates(to)
+
+    row_increment = from_row < to_row ? 1 : -1
+
+    from_row += row_increment
+    until from_row == to_row
+      return false unless @board[from_row][col].nil?
+
+      from_row += row_increment
     end
+    true
+  end
 
-    row[from_column + 1..to_column].all?(&:nil?)
+  def horizontal_path_clear?(from, to)
+    row, from_col = ChessBoard.position_to_coordinates(from)
+    _, to_col = ChessBoard.position_to_coordinates(to)
+
+    col_increment = from_col < to_col ? 1 : -1
+
+    from_col += col_increment
+    until from_col == to_col
+      return false unless @board[row][from_col].nil?
+
+      from_col += col_increment
+    end
+    true
+  end
+
+  def diagonal_path_clear?(from, to)
+    from_row, from_col = ChessBoard.position_to_coordinates(from)
+    to_row, to_col = ChessBoard.position_to_coordinates(to)
+
+    row_increment = from_row < to_row ? 1 : -1
+    col_increment = from_col < to_col ? 1 : -1
+
+    from_row += row_increment
+    from_col += col_increment
+    until [from_col, from_row] == [to_col, to_row]
+      return false unless @board[from_row][from_col].nil?
+
+      from_col += col_increment
+      from_row += row_increment
+    end
+    true
+  end
+
+  def one_space_away?(from, to)
+    n_rows_away?(from, to, 1) && n_columns_away?(from, to, 1)
   end
 
   def n_rows_away?(from, to, n)
     _from_column, from_row = ChessBoard.position_to_coordinates(from)
     _to_column, to_row = ChessBoard.position_to_coordinates(to)
     (to_row - from_row).abs == n
+  end
+
+  def n_columns_away?(from, to, n)
+    from_column, _from_row = ChessBoard.position_to_coordinates(from)
+    to_column, _to_row = ChessBoard.position_to_coordinates(to)
+    (to_column - from_column).abs == n
   end
 
   private
