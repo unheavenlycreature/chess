@@ -69,10 +69,10 @@ class ChessManager
 
     if piece.current_position[1].to_i > desired_position[1].to_i
       @en_passant_position = piece.current_position[0] + \
-        (piece.current_position[1].to_i - 1).to_s
-    else 
+                             (piece.current_position[1].to_i - 1).to_s
+    else
       @en_passant_position = piece.current_position[0] + \
-        (piece.current_position[1].to_i + 1).to_s
+                             (piece.current_position[1].to_i + 1).to_s
     end
     apply_en_passant_to_opponent_pawns(desired_position)
   end
@@ -97,24 +97,28 @@ class ChessManager
   end
 
   def make_move(piece, desired_position, move_type)
-    remove_special_move_from_piece(piece)
-
     # Inform opponent's piece it was removed.
     @board.at(desired_position).current_position = nil \
       if player_has_piece?(desired_position, @opponent_name)
+
+    # If the king castled, move the rook as well.
+    move_castling_rook(piece.current_position, desired_position) if move_type == :castling
 
     # Prepare opponent pawns for en passant.
     if move_type == :two_spaces_forward
       setup_en_passant(piece, desired_position)
     end
 
+    # Remove moves that are only allowed once per game from the piece.
+    if move_type == :two_spaces_forward || move_type == :castling
+      piece.allowed_moves.keep_if { |move| move != move_type }
+    end
+
     # Remove opponent's pawn if it was captured by en_passant.
     remove_targeted_piece if move_type == :en_passant
 
     # Move the piece to the new position
-    @board.set(piece.current_position, nil)
-    piece.current_position = desired_position
-    @board.set(desired_position, piece)
+    move_piece_to_position(piece, desired_position)
 
     reset_en_passant unless move_type == :two_spaces_forward
     remove_en_passant_from_pawns unless move_type == :two_spaces_forward
@@ -136,6 +140,7 @@ class ChessManager
     if piece.starting_position[1].to_i > 6
       return to[1].to_i < piece.current_position[1].to_i
     end
+
     to[1].to_i > piece.current_position[1].to_i
   end
 
@@ -143,37 +148,98 @@ class ChessManager
     return false if player_has_piece?(to, @current_name)
 
     from = piece.current_position
-    case move_type
-    when :en_passant then to == @en_passant_position
-    when :two_spaces_forward
-      @board.in_same_column?(from, to) && \
-        @board.n_rows_away?(from, to, 2) && \
-        @board.vertical_path_clear?(from, to) && \
-        forward_move?(piece, to)
-    when :one_space_forward
-      @board.in_same_column?(from, to) && \
-        @board.n_rows_away?(from, to, 1) && \
-        @board.vertical_path_clear?(from, to) && \
-        forward_move?(piece, to)
-    when :diagonal_to_take
-      @board.diagonally_accessible?(from, to) && \
-        @board.one_space_away?(from, to) && \
-        forward_move?(piece, to) && \
-        player_has_piece?(to, @opponent_name)
-    when :horizontal
-      @board.in_same_row?(from, to) && \
-        @board.horizontal_path_clear?(from, to)
-    when :vertical
-      @board.in_same_column?(from, to) && \
-        @board.vertical_path_clear?(from, to)
-    when :diagonal
-      @board.diagonally_accessible?(from, to) && \
-        @board.diagonal_path_clear?(from, to)
-    when :knight then @board.knight_accessible?(from, to)
-    # TODO: handle moving into check.
-    when :one_any_direction then @board.one_space_away?(from, to)
-    when :castling then false
-    end
+    send("#{move_type}_eligible?", piece, from, to)
+  end
+
+  def en_passant_eligible?(_piece, _from, to)
+    to == @en_passant_position
+  end
+
+  def two_spaces_forward_eligible?(piece, from, to)
+    @board.in_same_column?(from, to) && \
+      @board.n_rows_away?(from, to, 2) && \
+      @board.vertical_path_clear?(from, to) && \
+      forward_move?(piece, to)
+  end
+
+  def one_space_forward_eligible?(piece, from, to)
+    @board.in_same_column?(from, to) && \
+      @board.n_rows_away?(from, to, 1) && \
+      @board.vertical_path_clear?(from, to) && \
+      forward_move?(piece, to)
+  end
+
+  def diagonal_to_take_eligible?(piece, from, to)
+    @board.diagonally_accessible?(from, to) && \
+      @board.one_space_away?(from, to) && \
+      forward_move?(piece, to) && \
+      player_has_piece?(to, @opponent_name)
+  end
+
+  def horizontal_eligible?(_piece, from, to)
+    @board.in_same_row?(from, to) && \
+      @board.horizontal_path_clear?(from, to)
+  end
+
+  def vertical_eligible?(_piece, from, to)
+    @board.in_same_column?(from, to) && \
+      @board.vertical_path_clear?(from, to)
+  end
+
+  def diagonal_eligible?(piece,from,to)
+    @board.diagonally_accessible?(from, to) && \
+      @board.diagonal_path_clear?(from, to)
+  end
+
+  def knight_eligible?(_piece, from, to)
+    @board.knight_accessible?(from, to)
+  end
+
+  def one_any_direction_eligible?(_piece, from, to)
+    @board.one_space_away?(from, to)
+  end
+
+  def castling_eligible?(_piece, from, to)
+    @rook_positions = {
+      %w[e1 c1] => 'a1',
+      %w[e1 g1] => 'h1',
+      %w[e8 c8] => 'a8',
+      %w[e8 g8] => 'h8'
+    }
+
+    rook_position = @rook_positions[[from, to]]
+    return false if rook_position.nil? || !castling_rook_present?(rook_position)
+
+    return false unless @board.horizontal_path_clear?(from, rook_position)
+
+    # TODO: make sure no space in the path is under attack.
+    true
+  end
+
+  def move_castling_rook(king_from, king_to)
+    rook_position = @rook_positions[[king_from, king_to]]
+    new_positions = {
+      'a1' => 'd1',
+      'h1' => 'f1',
+      'a8' => 'd8',
+      'h8' => 'f8'
+    }
+
+    rook = @board.at(rook_position)
+    new_position = new_positions[rook_position]
+    move_piece_to_position(rook, new_position)
+    rook.allowed_moves.keep_if { |move| move != :castling }
+  end
+
+  def castling_rook_present?(position)
+    rook = @board.at(position)
+    !rook.nil? && rook.is_a?(Rook) && rook.allowed_moves.include?(:castling)
+  end
+
+  def move_piece_to_position(piece, position)
+    @board.set(piece.current_position, nil)
+    @board.set(position, piece)
+    piece.current_position = position
   end
 
   def select_piece
@@ -222,3 +288,5 @@ class ChessManager
     [white_name, black_name]
   end
 end
+
+ChessManager.new
