@@ -33,12 +33,12 @@ class ChessBoard
   end
 
   def at(position)
-    col, row = ChessBoard.position_to_coordinates(position)
+    row, col = ChessBoard.position_to_coordinates(position)
     @board[row][col]
   end
 
   def set(position, piece)
-    col, row = ChessBoard.position_to_coordinates(position)
+    row, col = ChessBoard.position_to_coordinates(position)
     @board[row][col] = piece
   end
 
@@ -118,9 +118,15 @@ class ChessBoard
   end
 
   def n_rows_away?(from, to, n)
-    _from_column, from_row = ChessBoard.position_to_coordinates(from)
-    _to_column, to_row = ChessBoard.position_to_coordinates(to)
+    from_row, = ChessBoard.position_to_coordinates(from)
+    to_row, = ChessBoard.position_to_coordinates(to)
     (to_row - from_row).abs == n
+  end
+
+  def n_columns_away?(from, to, n)
+    _, from_column = ChessBoard.position_to_coordinates(from)
+    _, to_column = ChessBoard.position_to_coordinates(to)
+    (to_column - from_column).abs == n
   end
 
   private
@@ -129,16 +135,10 @@ class ChessBoard
     board = []
     8.times { board << [nil] * 8 }
     (white_pieces + black_pieces).each do |piece|
-      col, row = ChessBoard.position_to_coordinates(piece.current_position)
+      row, col = ChessBoard.position_to_coordinates(piece.current_position)
       board[row][col] = piece
     end
     board
-  end
-
-  def n_columns_away?(from, to, n)
-    from_column, _from_row = ChessBoard.position_to_coordinates(from)
-    to_column, _to_row = ChessBoard.position_to_coordinates(to)
-    (to_column - from_column).abs == n
   end
 
   def space_color(row_index, col_index)
