@@ -116,11 +116,6 @@ class ChessBoard
     (to_row - from_row).abs == n
   end
 
-  def n_columns_away?(from, to, n)
-    from_column, _from_row = ChessBoard.position_to_coordinates(from)
-    to_column, _to_row = ChessBoard.position_to_coordinates(to)
-    (to_column - from_column).abs == n
-  end
 
   private
 
@@ -132,6 +127,12 @@ class ChessBoard
       board[row][col] = piece
     end
     board
+  end
+
+  def n_columns_away?(from, to, n)
+    from_column, _from_row = ChessBoard.position_to_coordinates(from)
+    to_column, _to_row = ChessBoard.position_to_coordinates(to)
+    (to_column - from_column).abs == n
   end
 
   def space_color(row_index, col_index)
