@@ -75,7 +75,7 @@ end
 class Rook < ChessPiece
   attr_writer :allowed_moves
   def initialize(glyph, starting_position, owner)
-   super(glyph, starting_position, owner, %i[horizontal vertical castling])
+    super(glyph, starting_position, owner, %i[horizontal vertical castling])
   end
 end
 
