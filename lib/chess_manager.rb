@@ -174,8 +174,6 @@ class ChessManager
       to_remove = @board.at(desired_position)
       @opponent_pieces.delete_if { |op| op == to_remove }
     end
-    @board.at(desired_position).curr_pos = nil \
-      if player_has_piece?(desired_position, @opponent_name)
 
     # If the king castled, move the rook as well.
     if move_type == :castling
