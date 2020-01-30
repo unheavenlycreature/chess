@@ -1,11 +1,23 @@
 # Chess
 
-This directory contains a command line version of chess for two players, implemented in Ruby
+This directory contains a command line version of Chess for two players, implemented in Ruby
 as the [final assignment](https://www.theodinproject.com/courses/ruby-programming/lessons/ruby-final-project?ref=lnav) from the Ruby Programming section of [The Odin Project](https://www.theodinproject.com).
 
-To render the board properly, this game makes use of the colorize gem. To install it, run the following
-from the command line:
+## Requirements
+Playing this game requires Ruby. You can check whether you have
+it installed by seeing if the following produces a Ruby version number in your terminal.
 
-`gem install colorize`
+`$ ruby -v`
 
-To play the game, clone this repo and run `ruby lib/chess.rb`.
+If it does not, follow the directions [here](https://www.ruby-lang.org/en/documentation/installation/) to install Ruby.
+
+Additionally, this game leverages the colorize gem ([Github](https://github.com/fazibear/colorize), [RubyGems](https://rubygems.org/gems/colorize/versions/0.8.1)) to color the board and chess pieces. To install the gem, run the following from your terminal.
+
+`$ gem install colorize`
+
+## Running the Game
+
+To play the game, simply run the following from the root of the cloned repository.
+
+`$ ruby lib/chess.rb`
+
