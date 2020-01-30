@@ -9,7 +9,9 @@ class ChessManager
     if new_game?
       @current_name, @opponent_name = new_player_names
       @current_pieces, @opponent_pieces = \
-        InitialPieces.pieces_for_new_game(@current_name, @opponent_name)
+        InitialPieces.pieces_for_new_game(
+          :light_white, :blue,
+          @current_name, @opponent_name)
       @current_king, @opponent_king = find_kings
       @board = ChessBoard.new(@current_pieces, @opponent_pieces)
       play
@@ -28,15 +30,17 @@ class ChessManager
   end
 
   def next_turn
-    puts @board
+    @board.print
     made_move = false
     until made_move
       if king_in_check?
         piece = @current_king
-        puts 'Your king is in check. Where will you move it?'
+        @board.print_with_position(piece.current_position)
+        print 'Your king is in check! Where will you move it? '
       else
         piece = select_piece
-        puts 'Where do you want to move your piece?'
+        @board.print_with_position(piece.current_position)
+        print 'Where do you want to move your piece? '
       end
       desired_position = new_position
       made_move = made_move?(piece, desired_position)
@@ -378,10 +382,10 @@ class ChessManager
   end
 
   def select_piece
-    puts "Which piece are you moving #{@current_name}?"
+    print "Which piece are you moving #{@current_name}? "
     position = gets.chomp
     until valid_position?(position) && player_has_piece?(position, @current_name)
-      puts "You don't have a piece there. Pick another position."
+      print "You don't have a piece there. Pick another position. "
       position = gets.chomp
     end
     @board.at(position)
@@ -395,8 +399,8 @@ class ChessManager
   def new_position
     desired_position = gets.chomp
     until valid_position?(desired_position)
-      puts "That's not a valid position on the board."
-      puts 'Please enter a new position.'
+      print "That's not a valid position on the board. "
+      print 'Please enter a new position. '
       desired_position = gets.chomp
     end
     desired_position
@@ -409,17 +413,17 @@ class ChessManager
   end
 
   def new_game?
-    puts 'Would you like to start a new game? [y/n]'
+    print 'Would you like to start a new game? [Y/N] '
     option = gets.chomp
-    option.downcase == 'y'
+    option.upcase == 'Y'
   end
 
   def new_player_names
-    puts 'Who is playing as white?'
+    print 'Who is playing as white? '
     white_name = gets.chomp
-    puts 'Who is playing as black?'
-    black_name = gets.chomp
-    [white_name, black_name]
+    print 'Who is playing as blue? '
+    blue_name = gets.chomp
+    [white_name, blue_name]
   end
 
   def find_kings

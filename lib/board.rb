@@ -8,22 +8,13 @@ class ChessBoard
     @board = initialize_board(white_pieces, black_pieces)
   end
 
-  def to_s
-    printable = @board.reverse
-    column_markers = '  a  b  c  d  e  f  g  h  '.colorize(background: :black)
-    s = column_markers + "\n"
-    printable.each_with_index do |row, row_index|
-      row_marker = (8 - row_index).to_s.colorize(background: :black)
-      s += row_marker
-      row.each_with_index do |piece, col_index|
-        color = space_color(row_index, col_index)
-        space_contents = piece.nil? ? '   ' : " #{piece} "
-        s += space_contents.colorize(background: color)
-      end
-      s += row_marker + "\n"
-    end
-    s += column_markers
-    s
+  def print
+    puts self
+  end
+
+  def print_with_position(position)
+    row, col = ChessBoard.position_to_coordinates(position)
+    puts board_string(row, col)
   end
 
   def self.position_to_coordinates(position)
@@ -150,6 +141,27 @@ class ChessBoard
 
   private
 
+  def to_s
+    board_string
+  end
+
+  def board_string(h_row = nil, h_col = nil)
+    printable = @board.reverse
+    column_markers = "\n    a  b  c  d  e  f  g  h  "
+    s = column_markers + "\n\n"
+    printable.each_with_index do |row, row_index|
+      row_marker = (8 - row_index).to_s
+      s += "#{row_marker}  "
+      row.each_with_index do |piece, col_index|
+        color = space_color(row_index, col_index, h_row, h_col)
+        space_contents = piece.nil? ? '   ' : " #{piece} "
+        s += space_contents.colorize(background: color)
+      end
+      s += "  #{row_marker}\n"
+    end
+    s += "#{column_markers}\n\n"
+  end
+
   def initialize_board(white_pieces, black_pieces)
     board = []
     8.times { board << [nil] * 8 }
@@ -160,11 +172,13 @@ class ChessBoard
     board
   end
 
-  def space_color(row_index, col_index)
+  def space_color(row_index, col_index, h_row, h_col)
+    return :light_green if (7 - row_index).abs == h_row && col_index == h_col
+
     if row_index.even?
-      return col_index.even? ? :light_white : :light_black
+      return col_index.even? ? :light_black : :black
     end
 
-    col_index.even? ? :light_black : :light_white
+    col_index.even? ? :black : :light_black
   end
 end
