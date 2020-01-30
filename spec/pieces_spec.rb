@@ -14,20 +14,20 @@ describe ChessPiece do
     end
   end
 
-  context '#starting_position' do
+  context '#start_pos' do
     it 'returns starting position from initialization' do
-      expect(@piece.starting_position).to eq('d1')
+      expect(@piece.start_pos).to eq('d1')
     end
   end
 
-  context '#current_position' do
+  context '#curr_pos' do
     it 'returns starting location when unchanged' do
-      expect(@piece.current_position).to eq('d1')
+      expect(@piece.curr_pos).to eq('d1')
     end
   end
 
   it 'returns new location after it is changed' do
-    @piece.current_position = 'e1'
-    expect(@piece.current_position).to eq('e1')
+    @piece.curr_pos = 'e1'
+    expect(@piece.curr_pos).to eq('e1')
   end
 end

@@ -3,24 +3,16 @@
 require_relative 'board'
 require_relative 'pieces'
 
-# Manages a game of chess played by two players.
+# Manages a game of chess played by two players on the command-line.
 class ChessManager
-  def initialize
-    if new_game?
-      @current_name, @opponent_name = new_player_names
-      @current_pieces, @opponent_pieces = \
-        InitialPieces.pieces_for_new_game(
-          :light_white, :blue,
-          @current_name, @opponent_name)
-      @current_king, @opponent_king = find_kings
-      @board = ChessBoard.new(@current_pieces, @opponent_pieces)
-      play
-    else
-      # TODO: Implement game loading.
-    end
+  def initialize(current_name, opponent_name, current_pieces, opponent_pieces)
+    @current_name = current_name
+    @opponent_name = opponent_name
+    @current_pieces = current_pieces
+    @opponent_pieces = opponent_pieces
+    @current_king, @opponent_king = kings
+    @board = ChessBoard.new(@current_pieces, @opponent_pieces)
   end
-
-  private
 
   def play
     until game_over?
@@ -29,17 +21,19 @@ class ChessManager
     end
   end
 
+  private
+
   def next_turn
     @board.print
     made_move = false
     until made_move
       if king_in_check?
         piece = @current_king
-        @board.print_with_position(piece.current_position)
+        @board.print_with_position(piece.curr_pos)
         print 'Your king is in check! Where will you move it? '
       else
         piece = select_piece
-        @board.print_with_position(piece.current_position)
+        @board.print_with_position(piece.curr_pos)
         print 'Where do you want to move your piece? '
       end
       desired_position = new_position
@@ -68,7 +62,7 @@ class ChessManager
 
   def checkmate?
     king_adjacent_open_spaces = \
-      adjacent_spaces(@current_king.current_position).delete_if do |position|
+      adjacent_spaces(@current_king.curr_pos).delete_if do |position|
         !@board.at(position).nil?
       end
 
@@ -85,7 +79,7 @@ class ChessManager
 
   def king_in_check?
     @opponent_pieces.any? do |piece|
-      piece_can_reach?(piece, @current_king.current_position)
+      piece_can_reach?(piece, @current_king.curr_pos)
     end
   end
 
@@ -145,12 +139,12 @@ class ChessManager
   def setup_en_passant(piece, desired_position)
     @targetable_by_en_passant = piece
 
-    if piece.current_position[1].to_i > desired_position[1].to_i
-      @en_passant_position = piece.current_position[0] + \
-                             (piece.current_position[1].to_i - 1).to_s
+    if piece.curr_pos[1].to_i > desired_position[1].to_i
+      @en_passant_position = piece.curr_pos[0] + \
+                             (piece.curr_pos[1].to_i - 1).to_s
     else
-      @en_passant_position = piece.current_position[0] + \
-                             (piece.current_position[1].to_i + 1).to_s
+      @en_passant_position = piece.curr_pos[0] + \
+                             (piece.curr_pos[1].to_i + 1).to_s
     end
     apply_en_passant_to_opponent_pawns(desired_position)
   end
@@ -159,13 +153,13 @@ class ChessManager
     @opponent_pieces.each do |piece|
       next unless piece.is_a? Pawn
 
-      piece.allowed_moves << :en_passant if @board.in_same_row?(piece.current_position, new_pawn_position) && \
-                                            @board.n_columns_away?(piece.current_position, new_pawn_position, 1)
+      piece.allowed_moves << :en_passant if @board.in_same_row?(piece.curr_pos, new_pawn_position) && \
+                                            @board.n_columns_away?(piece.curr_pos, new_pawn_position, 1)
     end
   end
 
   def remove_targeted_piece
-    @board.set(@targetable_by_en_passant.current_position, nil)
+    @board.set(@targetable_by_en_passant.curr_pos, nil)
     @opponent_pieces.delete_if { |piece| piece == @targetable_by_en_passant }
   end
 
@@ -180,12 +174,12 @@ class ChessManager
       to_remove = @board.at(desired_position)
       @opponent_pieces.delete_if { |op| op == to_remove }
     end
-    @board.at(desired_position).current_position = nil \
+    @board.at(desired_position).curr_pos = nil \
       if player_has_piece?(desired_position, @opponent_name)
 
     # If the king castled, move the rook as well.
     if move_type == :castling
-      move_castling_rook(piece.current_position, desired_position)
+      move_castling_rook(piece.curr_pos, desired_position)
     end
 
     # Prepare opponent pawns for en passant.
@@ -226,7 +220,7 @@ class ChessManager
   end
 
   def promote(pawn, selection)
-    pawn_position = pawn.current_position
+    pawn_position = pawn.curr_pos
     case selection
     when 'B'
       promotion_piece = Bishop.new('♝', pawn_position, @current_name)
@@ -237,15 +231,14 @@ class ChessManager
     when 'Q'
       promotion_piece = Queen.new('♛', pawn_position, @current_name)
     end
-    puts "#{promotion_piece} #{promotion_piece.current_position}"
     move_piece_to_position(promotion_piece, pawn_position)
     @current_pieces << promotion_piece
     @current_pieces.delete_if { |piece| piece == pawn }
   end
 
   def reached_opposite_side(pawn)
-    (pawn.starting_position[1] == '2' && pawn.current_position[1] == '8') || \
-      (pawn.starting_position[1] == '7' && pawn.current_position[1] == '1')
+    (pawn.start_pos[1] == '2' && pawn.curr_pos[1] == '8') || \
+      (pawn.start_pos[1] == '7' && pawn.curr_pos[1] == '1')
   end
 
   def made_move?(piece, desired_position)
@@ -255,23 +248,23 @@ class ChessManager
       make_move(piece, desired_position, move_type)
       return true
     end
-    puts "That move isn't valid."
+    puts "Sorry, that move is invalid."
     false
   end
 
   def forward_move?(piece, to)
-    if piece.starting_position[1].to_i > 6
-      return to[1].to_i < piece.current_position[1].to_i
+    if piece.start_pos[1].to_i > 6
+      return to[1].to_i < piece.curr_pos[1].to_i
     end
 
-    to[1].to_i > piece.current_position[1].to_i
+    to[1].to_i > piece.curr_pos[1].to_i
   end
 
   def can_move_to_position_via?(piece, to, move_type, testing_for_check = false)
     player_making_move = testing_for_check ? @opponent_name : @current_name
     return false if player_has_piece?(to, player_making_move)
 
-    from = piece.current_position
+    from = piece.curr_pos
     send("#{move_type}_eligible?", piece, from, to, testing_for_check)
   end
 
@@ -376,17 +369,26 @@ class ChessManager
   end
 
   def move_piece_to_position(piece, position)
-    @board.set(piece.current_position, nil)
+    @board.set(piece.curr_pos, nil)
     @board.set(position, piece)
-    piece.current_position = position
+    piece.curr_pos = position
   end
 
   def select_piece
     print "Which piece are you moving #{@current_name}? "
     position = gets.chomp
-    until valid_position?(position) && player_has_piece?(position, @current_name)
-      print "You don't have a piece there. Pick another position. "
+    valid_pos = valid_position?(position)
+    has_piece = player_has_piece?(position, @current_name)
+    until valid_pos && has_piece
+      @board.print
+      if !valid_pos
+        print "That's not a valid position on the board. Pick another position. "
+      elsif !has_piece
+        print "You don't have a piece there. Pick another position. "
+      end
       position = gets.chomp
+      valid_pos = valid_position?(position)
+      has_piece = player_has_piece?(position, @current_name)
     end
     @board.at(position)
   end
@@ -399,8 +401,8 @@ class ChessManager
   def new_position
     desired_position = gets.chomp
     until valid_position?(desired_position)
-      print "That's not a valid position on the board. "
-      print 'Please enter a new position. '
+      @board.print
+      print "That's not a valid position on the board. Pick another position. "
       desired_position = gets.chomp
     end
     desired_position
@@ -412,21 +414,7 @@ class ChessManager
       ('1'..'8').include?(position[1])
   end
 
-  def new_game?
-    print 'Would you like to start a new game? [Y/N] '
-    option = gets.chomp
-    option.upcase == 'Y'
-  end
-
-  def new_player_names
-    print 'Who is playing as white? '
-    white_name = gets.chomp
-    print 'Who is playing as blue? '
-    blue_name = gets.chomp
-    [white_name, blue_name]
-  end
-
-  def find_kings
+  def kings
     current_king = @current_pieces.select do |piece|
       piece.is_a?(King)
     end[0]
@@ -436,5 +424,3 @@ class ChessManager
     [current_king, opponent_king]
   end
 end
-
-ChessManager.new

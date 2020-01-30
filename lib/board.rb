@@ -166,7 +166,7 @@ class ChessBoard
     board = []
     8.times { board << [nil] * 8 }
     (white_pieces + black_pieces).each do |piece|
-      row, col = ChessBoard.position_to_coordinates(piece.current_position)
+      row, col = ChessBoard.position_to_coordinates(piece.curr_pos)
       board[row][col] = piece
     end
     board
