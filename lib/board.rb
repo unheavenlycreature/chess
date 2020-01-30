@@ -65,7 +65,7 @@ class ChessBoard
       ((from_col - to_col).abs == 1 && (from_row - to_row).abs == 2)
   end
 
-  def vertical_path_clear?(from, to, allow_king_in_path)
+  def vertical_path_clear?(from, to, allow_king_in_path = false)
     from_row, col = ChessBoard.position_to_coordinates(from)
     to_row, = ChessBoard.position_to_coordinates(to)
 
@@ -85,7 +85,7 @@ class ChessBoard
     true
   end
 
-  def horizontal_path_clear?(from, to, allow_king_in_path)
+  def horizontal_path_clear?(from, to, allow_king_in_path = false)
     row, from_col = ChessBoard.position_to_coordinates(from)
     _, to_col = ChessBoard.position_to_coordinates(to)
 
@@ -105,7 +105,7 @@ class ChessBoard
     true
   end
 
-  def diagonal_path_clear?(from, to, allow_king_in_path)
+  def diagonal_path_clear?(from, to, allow_king_in_path = false)
     from_row, from_col = ChessBoard.position_to_coordinates(from)
     to_row, to_col = ChessBoard.position_to_coordinates(to)
 

@@ -174,7 +174,7 @@ class ChessManager
     # Remove the opponent's piece from play.
     if player_has_piece?(desired_position, @opponent_name)
       to_remove = @board.at(desired_position)
-      @opponent_pieces.delete_if { |p| p == to_remove }
+      @opponent_pieces.delete_if { |op| op == to_remove }
     end
     @board.at(desired_position).current_position = nil \
       if player_has_piece?(desired_position, @opponent_name)
@@ -202,6 +202,46 @@ class ChessManager
 
     reset_en_passant unless move_type == :two_spaces_forward
     remove_en_passant_from_pawns unless move_type == :two_spaces_forward
+
+    promote_if_eligible(piece) if piece.is_a?(Pawn)
+  end
+
+  def promote_if_eligible(pawn)
+    return unless reached_opposite_side(pawn)
+
+    puts 'Your pawn can be promoted!'
+    selection_message = 'Choose a Bishop (B), Rook (R), Knight (K), or Queen (Q)'
+    puts selection_message
+    selection = gets.chomp.upcase
+    until %w[B R K Q].include?(selection)
+      puts "I didn't understand that."
+      puts selection_message
+      selection = gets.chomp
+    end
+    promote(pawn, selection)
+  end
+
+  def promote(pawn, selection)
+    pawn_position = pawn.current_position
+    case selection
+    when 'B'
+      promotion_piece = Bishop.new('♝', pawn_position, @current_name)
+    when 'R'
+      promotion_piece = Rook.new('♜', pawn_position, @current_name)
+    when 'K'
+      promotion_piece = Knight.new('♞', pawn_position, @current_name)
+    when 'Q'
+      promotion_piece = Queen.new('♛', pawn_position, @current_name)
+    end
+    puts "#{promotion_piece} #{promotion_piece.current_position}"
+    move_piece_to_position(promotion_piece, pawn_position)
+    @current_pieces << promotion_piece
+    @current_pieces.delete_if { |piece| piece == pawn }
+  end
+
+  def reached_opposite_side(pawn)
+    (pawn.starting_position[1] == '2' && pawn.current_position[1] == '8') || \
+      (pawn.starting_position[1] == '7' && pawn.current_position[1] == '1')
   end
 
   def made_move?(piece, desired_position)
@@ -392,3 +432,5 @@ class ChessManager
     [current_king, opponent_king]
   end
 end
+
+ChessManager.new
