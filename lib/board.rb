@@ -65,7 +65,7 @@ class ChessBoard
       ((from_col - to_col).abs == 1 && (from_row - to_row).abs == 2)
   end
 
-  def vertical_path_clear?(from, to)
+  def vertical_path_clear?(from, to, allow_king_in_path)
     from_row, col = ChessBoard.position_to_coordinates(from)
     to_row, = ChessBoard.position_to_coordinates(to)
 
@@ -73,14 +73,19 @@ class ChessBoard
 
     from_row += row_increment
     until from_row == to_row
-      return false unless @board[from_row][col].nil?
-
-      from_row += row_increment
+      next_piece = @board[from_row][col]
+      if next_piece.nil?
+        from_row += row_increment
+      elsif next_piece.is_a?(King) && allow_king_in_path
+        from_row += row_increment
+      else
+        return false
+      end
     end
     true
   end
 
-  def horizontal_path_clear?(from, to)
+  def horizontal_path_clear?(from, to, allow_king_in_path)
     row, from_col = ChessBoard.position_to_coordinates(from)
     _, to_col = ChessBoard.position_to_coordinates(to)
 
@@ -88,14 +93,19 @@ class ChessBoard
 
     from_col += col_increment
     until from_col == to_col
-      return false unless @board[row][from_col].nil?
-
-      from_col += col_increment
+      next_piece = @board[row][from_col]
+      if next_piece.nil?
+        from_col += col_increment
+      elsif next_piece.is_a?(King) && allow_king_in_path
+        from_col += col_increment
+      else
+        return false
+      end
     end
     true
   end
 
-  def diagonal_path_clear?(from, to)
+  def diagonal_path_clear?(from, to, allow_king_in_path)
     from_row, from_col = ChessBoard.position_to_coordinates(from)
     to_row, to_col = ChessBoard.position_to_coordinates(to)
 
@@ -105,10 +115,16 @@ class ChessBoard
     from_row += row_increment
     from_col += col_increment
     until [from_col, from_row] == [to_col, to_row]
-      return false unless @board[from_row][from_col].nil?
-
-      from_col += col_increment
-      from_row += row_increment
+      next_piece = @board[from_row][from_col]
+      if next_piece.nil?
+        from_col += col_increment
+        from_row += row_increment
+      elsif next_piece.is_a?(King) && allow_king_in_path
+        from_col += col_increment
+        from_row += row_increment
+      else
+        return false
+      end
     end
     true
   end
