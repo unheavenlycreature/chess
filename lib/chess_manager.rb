@@ -247,7 +247,7 @@ class ChessManager
       make_move(piece, desired_position, move_type)
       return true
     end
-    @board
+    @board.print
     puts "Sorry, that move is invalid."
     false
   end
