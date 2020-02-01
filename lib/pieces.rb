@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'JSON'
+
 # Base class for all chess pieces.
 class ChessPiece
   attr_accessor :curr_pos
@@ -16,6 +18,18 @@ class ChessPiece
 
   def to_s
     @glyph.colorize(@color)
+  end
+
+  def to_json(*)
+    JSON.generate({
+      type: self.class.name,
+      glyph: @glyph,
+      start_pos: @start_pos,
+      curr_pos: @curr_pos,
+      color: @color,
+      owner: @owner,
+      allowed_moves: @allowed_moves
+    })
   end
 end
 
@@ -66,8 +80,8 @@ end
 
 # Module with convenience method to obtain
 # two sets of pieces ready for a new game.
-module InitialPieces
-  def self.pieces_for_new_game(white_color, blue_color, 
+module PieceFactory
+  def self.for_new_game(white_color, blue_color,
                                white_name = 'white', blue_name = 'blue')
     white_pawns = []
     blue_pawns = []
@@ -96,5 +110,19 @@ module InitialPieces
       Rook.new('h8', blue_color, blue_name)
     ]
     [white_pieces, blue_pieces]
+  end
+
+  def self.from_hash_array(hash_array)
+    hash_array.map! do |piece_hash|
+      piece = Object.const_get(piece_hash[:type]).new(
+        piece_hash[:glyph],
+        piece_hash[:color].to_sym,
+        piece_hash[:owner])
+      piece.curr_pos = piece_hash[:curr_pos]
+      if piece.respond_to? :allowed_moves=
+        piece.allowed_moves = piece_hash[:allowed_moves].map!(&:to_sym)
+      end
+      piece
+    end
   end
 end

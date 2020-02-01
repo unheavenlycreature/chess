@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'JSON'
 require_relative 'board'
 require_relative 'pieces'
 
@@ -32,12 +33,12 @@ class ChessManager
         @board.print_with_position(piece.curr_pos)
         print 'Your king is in check! Where will you move it? '
       else
-        piece = select_piece
+        piece = select_piece_or_save_and_exit
         @board.print_with_position(piece.curr_pos)
         print 'Where do you want to move your piece? '
       end
-      desired_position = new_position
-      made_move = made_move?(piece, desired_position)
+      position = new_position_or_save_and_exit(piece.curr_pos)
+      made_move = made_move?(piece, position)
     end
   end
 
@@ -246,6 +247,7 @@ class ChessManager
       make_move(piece, desired_position, move_type)
       return true
     end
+    @board
     puts "Sorry, that move is invalid."
     false
   end
@@ -372,20 +374,22 @@ class ChessManager
     piece.curr_pos = position
   end
 
-  def select_piece
+  def select_piece_or_save_and_exit
     print "Which piece are you moving #{@current_name}? "
     position = gets.chomp
-    valid_pos = valid_position?(position)
+    valid_pos_or_save = valid_position_or_save?(position)
+    save_and_exit if position.downcase == 's'
     has_piece = player_has_piece?(position, @current_name)
-    until valid_pos && has_piece
+    until valid_pos_or_save && has_piece
       @board.print
-      if !valid_pos
+      if !valid_pos_or_save
         print "That's not a valid position on the board. Pick another position. "
       elsif !has_piece
         print "You don't have a piece there. Pick another position. "
       end
       position = gets.chomp
-      valid_pos = valid_position?(position)
+      valid_pos_or_save = valid_position_or_save?(position)
+      save_and_exit if position.downcase == 's'
       has_piece = player_has_piece?(position, @current_name)
     end
     @board.at(position)
@@ -396,18 +400,20 @@ class ChessManager
     !piece.nil? && piece.owner == player
   end
 
-  def new_position
-    desired_position = gets.chomp
-    until valid_position?(desired_position)
-      @board.print
+  def new_position_or_save_and_exit(curr_pos)
+    position_or_save = gets.chomp
+    until valid_position_or_save?(position_or_save)
+      @board.print_with_position(curr_pos)
       print "That's not a valid position on the board. Pick another position. "
-      desired_position = gets.chomp
+      position_or_save = gets.chomp
     end
-    desired_position
+    save_and_exit if position_or_save.downcase == 's'
+    position_or_save
   end
 
-  def valid_position?(position)
-    position.length == 2 && \
+  def valid_position_or_save?(position)
+    (position.downcase == 's') || \
+      position.length == 2 && \
       ('a'..'h').include?(position[0].downcase) && \
       ('1'..'8').include?(position[1])
   end
@@ -420,5 +426,26 @@ class ChessManager
       piece.is_a?(King)
     end[0]
     [current_king, opponent_king]
+  end
+
+  def save_and_exit
+    file, filename = create_save_file
+    JSON.dump({
+      current_name: @current_name,
+      opponent_name: @opponent_name,
+      current_pieces: @current_pieces,
+      opponent_pieces: @opponent_pieces,
+    }, file)
+    file.close
+    puts "Game saved to #{filename}. Goodbye!"
+    exit
+  end
+
+  def create_save_file
+    save_dir = "saves"
+    Dir.mkdir(save_dir) unless Dir.exist? save_dir
+    filename = \
+      "#{save_dir}/#{@current_name}_v_#{@opponent_name}_#{Time.now.to_i}"
+    [File.open(filename, "w"), filename]
   end
 end
