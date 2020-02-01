@@ -63,7 +63,6 @@ class Chess
   def parse_save_file(filename)
     file = File.open(filename)
     save_state = JSON.parse(file.read, symbolize_names: true)
-    save_state[:current_pieces].map!
     file.close
     save_state
   end
