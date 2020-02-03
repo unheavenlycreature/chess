@@ -55,10 +55,59 @@ class ChessManager
   end
 
   def game_over?
-    return false unless checkmate?
+    if checkmate?
+      puts "Checkmate! #{opponent_name} wins!"
+      true
+    elsif insufficient_material?
+      puts "Insufficient material! It's a draw!"
+      true
+    end
 
-    puts "Checkmate! #{@opponent_name} wins!"
-    true
+    false
+  end
+
+  def insufficient_material?
+    only_kings? || \
+      kings_and_knights?(@current_pieces, @opponent_pieces) || \
+      kings_and_knights?(@opponent_pieces, @current_pieces) || \
+      kings_and_bishop?(@current_pieces, @opponent_pieces) || \
+      kings_and_bishop?(@opponent_pieces, @current_pieces) || \
+      kings_and_bishops?
+  end
+
+  def only_kings?
+    @current_pieces.all? { |piece| piece.is_a?(King) } && \
+      @opponent_pieces.all? { |piece| piece.is_a?(King) }
+  end
+
+  def kings_and_knights?(king_only, king_and_knights)
+    king_only.all? { |piece| piece.is_a?(King) } && \
+      king_and_knights.size < 4 && \
+      king_and_knights.all? do |piece|
+        piece.is_a?(King) || piece.is_a?(Knight)
+      end
+  end
+
+  def kings_and_bishop?(king_only, king_and_bishop)
+    king_only.all? { |piece| piece.is_a?(King) } && \
+      king_and_bishop.size() == 2 && \
+      king_and_bishop.all? do |piece|
+        piece.is_a?(King) || piece.is_a?(Bishop)
+      end
+  end
+
+  def kings_and_bishops?
+    pieces = @current_pieces.union(@opponent_pieces)
+
+    return false if pieces.size > 4
+
+    white_squares = ["c8", "f1"]
+    bishops = pieces.filter do |piece| 
+      piece.is_a?(Bishop)
+    end
+
+    bishops.all? { |b| white_squares.include?(b.start_pos) } || \
+      bishops.none? { |b| white_squares.include?(b.start_pos) }
   end
 
   def checkmate?
