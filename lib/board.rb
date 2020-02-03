@@ -131,6 +131,8 @@ class ChessBoard
   end
 
   def one_space_away?(from, to)
+    return false if from == to
+
     from_row, from_col = ChessBoard.position_to_coordinates(from)
     to_row, to_col = ChessBoard.position_to_coordinates(to)
 
