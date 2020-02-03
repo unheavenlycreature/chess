@@ -36,8 +36,9 @@ class Chess
     names = []
     %w[white blue].each do |color|
       print "Who is playing as #{color}? "
-      names << gets.chomp
-    end
+      names << gets.chomp.capitalize
+    ends
+    names[1] = "Other #{names[1]}" if names[0] == names[1]
     names
   end
 
