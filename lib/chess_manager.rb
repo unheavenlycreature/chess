@@ -56,7 +56,7 @@ class ChessManager
 
   def game_over?
     if checkmate?
-      puts "Checkmate! #{opponent_name} wins!"
+      puts "Checkmate! #{@opponent_name} wins!"
       true
     elsif insufficient_material?
       puts "Insufficient material! It's a draw!"
@@ -64,9 +64,9 @@ class ChessManager
     elsif stalemate?
       puts "Stalemate! It's a draw!"
       true
+    else
+      false
     end
-
-    false
   end
 
   def insufficient_material?
@@ -101,14 +101,15 @@ class ChessManager
 
   def kings_and_bishops?
     pieces = @current_pieces.union(@opponent_pieces)
-
     return false if pieces.size > 4
 
-    white_squares = %w[c8 f1]
     bishops = pieces.filter do |piece|
       piece.is_a?(Bishop)
     end
 
+    return false unless bishops.size == 2
+
+    white_squares = %w[c8 f1]
     bishops.all? { |b| white_squares.include?(b.start_pos) } || \
       bishops.none? { |b| white_squares.include?(b.start_pos) }
   end
