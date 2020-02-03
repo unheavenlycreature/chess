@@ -21,3 +21,6 @@ To play the game, simply run the following from the root of the cloned repositor
 
 `$ ruby lib/chess.rb`
 
+## Saving your Game
+
+At any time during play, you can save your game by entering `s` as your command and hitting enter. The game will create a `saves` directory and write the save file there. To resume, select `N` when asked to start a new game, and you'll be asked to provide the name of your save file.
