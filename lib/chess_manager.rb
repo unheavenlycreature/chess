@@ -61,6 +61,9 @@ class ChessManager
     elsif insufficient_material?
       puts "Insufficient material! It's a draw!"
       true
+    elsif stalemate?
+      puts "Stalemate! It's a draw!"
+      true
     end
 
     false
@@ -90,7 +93,7 @@ class ChessManager
 
   def kings_and_bishop?(king_only, king_and_bishop)
     king_only.all? { |piece| piece.is_a?(King) } && \
-      king_and_bishop.size() == 2 && \
+      king_and_bishop.size == 2 && \
       king_and_bishop.all? do |piece|
         piece.is_a?(King) || piece.is_a?(Bishop)
       end
@@ -101,8 +104,8 @@ class ChessManager
 
     return false if pieces.size > 4
 
-    white_squares = ["c8", "f1"]
-    bishops = pieces.filter do |piece| 
+    white_squares = %w[c8 f1]
+    bishops = pieces.filter do |piece|
       piece.is_a?(Bishop)
     end
 
@@ -125,6 +128,10 @@ class ChessManager
         end
       end
     end
+  end
+
+  def stalemate?
+    # TODO: implement stalemate.
   end
 
   def king_in_check?
@@ -297,14 +304,12 @@ class ChessManager
       return true
     end
     @board.print
-    puts "Sorry, that move is invalid."
+    puts 'Sorry, that move is invalid.'
     false
   end
 
   def forward_move?(piece, to)
-    if piece.start_pos[1].to_i > 6
-      return to[1].to_i < piece.curr_pos[1].to_i
-    end
+    return to[1].to_i < piece.curr_pos[1].to_i if piece.start_pos[1].to_i > 6
 
     to[1].to_i > piece.curr_pos[1].to_i
   end
@@ -463,8 +468,8 @@ class ChessManager
   def valid_position_or_save?(position)
     (position.downcase == 's') || \
       position.length == 2 && \
-      ('a'..'h').include?(position[0].downcase) && \
-      ('1'..'8').include?(position[1])
+        ('a'..'h').include?(position[0].downcase) && \
+        ('1'..'8').include?(position[1])
   end
 
   def kings
@@ -480,21 +485,21 @@ class ChessManager
   def save_and_exit
     file, filename = create_save_file
     JSON.dump({
-      current_name: @current_name,
-      opponent_name: @opponent_name,
-      current_pieces: @current_pieces,
-      opponent_pieces: @opponent_pieces,
-    }, file)
+                current_name: @current_name,
+                opponent_name: @opponent_name,
+                current_pieces: @current_pieces,
+                opponent_pieces: @opponent_pieces
+              }, file)
     file.close
     puts "Game saved to #{filename}. Goodbye!"
     exit
   end
 
   def create_save_file
-    save_dir = "saves"
+    save_dir = 'saves'
     Dir.mkdir(save_dir) unless Dir.exist? save_dir
     filename = \
       "#{save_dir}/#{@current_name}_v_#{@opponent_name}_#{Time.now.to_i}"
-    [File.open(filename, "w"), filename]
+    [File.open(filename, 'w'), filename]
   end
 end
