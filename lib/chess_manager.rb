@@ -131,7 +131,13 @@ class ChessManager
   end
 
   def stalemate?
-    # TODO: implement stalemate.
+    @current_pieces.none? do |piece|
+      piece.allowed_moves.any? do |move|
+        @board.all_spaces.any? do |space|
+          can_move_to_position_via?(piece, space, move, true)
+        end
+      end
+    end
   end
 
   def king_in_check?

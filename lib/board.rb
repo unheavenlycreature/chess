@@ -23,6 +23,16 @@ class ChessBoard
     [row, column]
   end
 
+  def all_spaces
+    spaces = []
+    ('a'..'h').each do |letter|
+      ('1'..'8').each do |number|
+        spaces << letter + number
+      end
+    end
+    spaces
+  end
+
   def at(position)
     row, col = ChessBoard.position_to_coordinates(position)
     @board[row][col]
